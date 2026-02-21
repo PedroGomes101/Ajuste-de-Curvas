@@ -46,10 +46,7 @@ function limparDados() {
     </div>`;
   const badge = document.getElementById('badgeR2');
   if (badge) badge.style.display = 'none';
-  if (grafico) {
-    grafico.destroy();
-    grafico = null;
-  }
+
 }
 
 /**
@@ -148,7 +145,33 @@ function exibirResultados(data, tipo) {
 }
 
 /**
- * Cria o gráfico com os dados e curva ajustada
+ * Abre o modal do gráfico
+ */
+function abrirModal() {
+  document.getElementById('modalGrafico').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Fecha o modal do gráfico
+ */
+function fecharModal() {
+  document.getElementById('modalGrafico').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Fechar modal ao clicar no fundo escuro
+document.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modalGrafico')) fecharModal();
+});
+
+// Fechar modal com Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') fecharModal();
+});
+
+/**
+ * Cria o gráfico e exibe no modal por cima da página
  */
 async function criarGrafico() {
   const { valoresX, valoresY } = obterValores();
@@ -166,26 +189,26 @@ async function criarGrafico() {
   
   try {
     const pontosOriginais = valoresX.map((x, i) => ({ x, y: valoresY[i] }));
-    
+
     const response = await fetch(API_BASE + '/pontos-curva', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ valoresX, valoresY, tipo, numPontos: 100 })
     });
-    
+
     const curvaData = await response.json();
-    
+
     if (!curvaData.sucesso) {
       alert('Erro: ' + curvaData.erro);
       return;
     }
-    
+
     if (grafico) {
       grafico.destroy();
     }
-    
+
     const ctx = document.getElementById('graficoAjuste').getContext('2d');
-    
+
     const datasets = [
       {
         label: 'Dados Experimentais',
@@ -200,7 +223,7 @@ async function criarGrafico() {
         showLine: false
       }
     ];
-    
+
     if (tipo === 'todos') {
       curvaData.curvas.forEach(curva => {
         const pontosCurva = curva.x.map((x, i) => ({ x, y: curva.y[i] }));
@@ -237,7 +260,7 @@ async function criarGrafico() {
         tension: 0.4
       });
     }
-    
+
     grafico = new Chart(ctx, {
       type: 'scatter',
       data: { datasets },
@@ -318,7 +341,9 @@ async function criarGrafico() {
         }
       }
     });
-    
+
+    abrirModal();
+
   } catch (error) {
     console.error('Erro:', error);
     alert('Erro ao criar gráfico');
